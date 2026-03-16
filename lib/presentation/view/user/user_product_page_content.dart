@@ -73,7 +73,7 @@ class _UserProductPageContentState extends State<UserProductPageContent> {
     if (!product.isAvailable || product.isOutOfStock || product.stock <= 0) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Produk tidak tersedia'),
+          content: Text('Product not available'),
           backgroundColor: AppColors.error,
         ),
       );
@@ -83,7 +83,7 @@ class _UserProductPageContentState extends State<UserProductPageContent> {
     context.read<OrderBloc>().add(AddToCartEvent(product: product));
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
-        content: Text('Produk ditambahkan ke keranjang'),
+        content: Text('Product added to cart'),
         backgroundColor: AppColors.success,
       ),
     );
@@ -202,7 +202,7 @@ class _UserProductPageContentState extends State<UserProductPageContent> {
             children: [
               Expanded(
                 child: ChoiceChip(
-                  label: const Text('Semua'),
+                  label: const Text('All'),
                   selected: _selectedCategory == 'all',
                   onSelected: (selected) {
                     if (selected) _onCategoryChanged('all');
@@ -400,7 +400,7 @@ class _UserProductPageContentState extends State<UserProductPageContent> {
                               Expanded(
                                 flex: 2,
                                 child: Text(
-                                  'Stok: ${product.stock}',
+                                  'Stock: ${product.stock}',
                                   style: TextStyle(
                                     fontSize: Responsive.getResponsiveFontSize(
                                       context,
@@ -416,7 +416,7 @@ class _UserProductPageContentState extends State<UserProductPageContent> {
                               Expanded(
                                 flex: 3,
                                 child: CustomButton(
-                                  text: 'Tambah',
+                                  text: 'Add',
                                   onPressed: () => _addToCart(context, product),
                                   height: 22,
                                 ),

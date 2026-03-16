@@ -85,7 +85,7 @@ class _UserPaymentPageState extends State<UserPaymentPage> {
               Card(
                 child: RadioListTile<String>(
                   title: const Text(AppStrings.cash),
-                  subtitle: const Text('Bayar dengan uang tunai'),
+                  subtitle: const Text('Pay with cash'),
                   value: 'cash',
                   groupValue: _selectedPaymentMethod,
                   onChanged: (value) {
@@ -101,7 +101,7 @@ class _UserPaymentPageState extends State<UserPaymentPage> {
               Card(
                 child: RadioListTile<String>(
                   title: const Text(AppStrings.qrCode),
-                  subtitle: const Text('Bayar dengan QR Code'),
+                  subtitle: const Text('Pay with QR Code'),
                   value: 'qrcode',
                   groupValue: _selectedPaymentMethod,
                   onChanged: (value) {
@@ -121,7 +121,7 @@ class _UserPaymentPageState extends State<UserPaymentPage> {
                     child: Column(
                       children: [
                         const Text(
-                          'Scan QR Code untuk membayar',
+                          'Scan QR Code to pay',
                           style: TextStyle(
                             fontSize: AppSizes.fontSizeL,
                             fontWeight: FontWeight.bold,
@@ -137,7 +137,7 @@ class _UserPaymentPageState extends State<UserPaymentPage> {
                         ),
                         const SizedBox(height: AppSizes.paddingM),
                         const Text(
-                          'Harap tunjukkan QR Code ini kepada kasir',
+                          'Please show this QR Code to the cashier',
                           textAlign: TextAlign.center,
                           style: TextStyle(
                             fontSize: AppSizes.fontSizeS,

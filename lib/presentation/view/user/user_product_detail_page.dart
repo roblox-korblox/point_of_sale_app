@@ -23,7 +23,7 @@ class UserProductDetailPage extends StatelessWidget {
     return SafeArea(
       child: Scaffold(
         appBar: AppBar(
-          title: const Text('Detail Produk'),
+          title: const Text('Product Detail'),
           backgroundColor: AppColors.primary,
           foregroundColor: AppColors.textWhite,
         ),
@@ -104,7 +104,7 @@ class UserProductDetailPage extends StatelessWidget {
                   ),
                   const SizedBox(width: AppSizes.paddingXS),
                   Text(
-                    'Kategori: ${product.categoryEnum.name}',
+                    'Category: ${product.categoryEnum.name}',
                     style: TextStyle(
                       fontSize: Responsive.getResponsiveFontSize(
                         context,
@@ -127,7 +127,7 @@ class UserProductDetailPage extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       const Text(
-                        'Harga',
+                        'Price',
                         style: TextStyle(
                           fontSize: AppSizes.fontSizeM,
                           color: AppColors.textSecondary,
@@ -215,7 +215,7 @@ class UserProductDetailPage extends StatelessWidget {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               const Text(
-                                'Stok Tersedia',
+                                'Available Stock',
                                 style: TextStyle(
                                   fontSize: AppSizes.fontSizeM,
                                   color: AppColors.textSecondary,
@@ -266,8 +266,8 @@ class UserProductDetailPage extends StatelessWidget {
                           product.isAvailable &&
                                   !product.isOutOfStock &&
                                   product.stock > 0
-                              ? 'Tersedia'
-                              : 'Tidak Tersedia',
+                              ? 'Available'
+                              : 'Not Available',
                           style: TextStyle(
                             fontSize: AppSizes.fontSizeM,
                             fontWeight: FontWeight.bold,
@@ -305,7 +305,7 @@ class UserProductDetailPage extends StatelessWidget {
                             ),
                             const SizedBox(width: AppSizes.paddingS),
                             Text(
-                              'Deskripsi',
+                              'Description',
                               style: TextStyle(
                                 fontSize: Responsive.getResponsiveFontSize(
                                   context,
@@ -350,7 +350,7 @@ class UserProductDetailPage extends StatelessWidget {
                     );
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
-                        content: Text('Produk ditambahkan ke keranjang'),
+                        content: Text('Product added to cart'),
                         backgroundColor: AppColors.success,
                       ),
                     );
@@ -360,7 +360,7 @@ class UserProductDetailPage extends StatelessWidget {
                 )
               else
                 CustomButton(
-                  text: 'Tidak Tersedia',
+                  text: 'Not Available',
                   onPressed: null,
                   backgroundColor: AppColors.error,
                 ),

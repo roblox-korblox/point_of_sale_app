@@ -1,6 +1,6 @@
 class AppStrings {
   // App Name
-  static const String appName = 'Point of Sale';
+  static const String appName = 'Kasirku POS';
   
   // Authentication
   static const String login = 'Login';

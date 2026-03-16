@@ -21,10 +21,14 @@ class PrinterScanPage extends StatefulWidget {
 class _PrinterScanPageState extends State<PrinterScanPage> {
   final PrinterService _printerService = PrinterService();
   List<BluetoothInfo> _devices = [];
+
   bool _isLoading = false;
   bool _isConnecting = false;
+
   BluetoothInfo? _selectedDevice;
+
   String? _errorMessage;
+
   bool _isBluetoothAvailable = false;
   bool _isBluetoothEnabled = false;
 
@@ -42,13 +46,10 @@ class _PrinterScanPageState extends State<PrinterScanPage> {
 
     try {
       await _printerService.initialize();
-      
-      // Check permissions
+
       final isAvailable = await _printerService.isAvailable();
-      
-      // Check if Bluetooth is enabled
       final isEnabled = await _printerService.isOn();
-      
+
       setState(() {
         _isBluetoothAvailable = isAvailable;
         _isBluetoothEnabled = isEnabled;
@@ -56,7 +57,8 @@ class _PrinterScanPageState extends State<PrinterScanPage> {
 
       if (!isAvailable) {
         setState(() {
-          _errorMessage = 'Izin Bluetooth tidak diberikan. Silakan berikan izin Bluetooth di pengaturan aplikasi.';
+          _errorMessage =
+              'Bluetooth permission not granted. Please grant Bluetooth permission.';
           _isLoading = false;
         });
         return;
@@ -64,13 +66,13 @@ class _PrinterScanPageState extends State<PrinterScanPage> {
 
       if (!isEnabled) {
         setState(() {
-          _errorMessage = 'Bluetooth tidak aktif. Silakan aktifkan Bluetooth di pengaturan perangkat.';
+          _errorMessage =
+              'Bluetooth is not enabled. Please enable Bluetooth.';
           _isLoading = false;
         });
         return;
       }
 
-      // Load paired devices
       await _loadPairedDevices();
     } catch (e) {
       setState(() {
@@ -88,6 +90,7 @@ class _PrinterScanPageState extends State<PrinterScanPage> {
 
     try {
       final devices = await _printerService.getPairedDevices();
+
       setState(() {
         _devices = devices;
         _isLoading = false;
@@ -95,13 +98,14 @@ class _PrinterScanPageState extends State<PrinterScanPage> {
 
       if (devices.isEmpty) {
         setState(() {
-          _errorMessage = 'Tidak ada printer Bluetooth yang ditemukan.\n\nCara mengatasi:\n1. Buka Pengaturan Bluetooth di perangkat Anda\n2. Pastikan Bluetooth aktif\n3. Pindai dan pasangkan printer Anda\n4. Kembali ke aplikasi dan tekan Refresh';
+          _errorMessage =
+              'No Bluetooth printers found.\nPair your printer in Bluetooth settings then press Refresh.';
         });
       }
     } catch (e) {
       setState(() {
-        _isLoading = false;
         _errorMessage = 'Error loading devices: $e';
+        _isLoading = false;
       });
     }
   }
@@ -115,22 +119,25 @@ class _PrinterScanPageState extends State<PrinterScanPage> {
 
     try {
       final connected = await _printerService.connect(device);
+
       if (connected) {
         if (widget.onPrinterSelected != null) {
           widget.onPrinterSelected!(device);
         }
+
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('Berhasil terhubung ke ${device.name}'),
+              content: Text('Connected to ${device.name}'),
               backgroundColor: AppColors.success,
             ),
           );
+
           Navigator.pop(context);
         }
       } else {
         setState(() {
-          _errorMessage = 'Gagal terhubung ke printer. Pastikan printer dalam jangkauan dan sudah dipasangkan.';
+          _errorMessage = 'Failed to connect to printer.';
         });
       }
     } catch (e) {
@@ -149,28 +156,46 @@ class _PrinterScanPageState extends State<PrinterScanPage> {
   Future<void> _disconnect() async {
     try {
       await _printerService.disconnect();
+
       setState(() {
         _selectedDevice = null;
       });
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Printer terputus'),
-            backgroundColor: AppColors.success,
+            content: Text('Printer disconnected'),
           ),
         );
-        setState(() {});
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Error disconnecting: $e'),
-            backgroundColor: AppColors.error,
           ),
         );
       }
     }
+  }
+
+  Widget bluetoothWarning(String text) {
+    return Container(
+      margin: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Colors.red.withOpacity(0.08),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.red.withOpacity(0.2)),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.bluetooth_disabled, color: Colors.red),
+          const SizedBox(width: 10),
+          Expanded(child: Text(text)),
+        ],
+      ),
+    );
   }
 
   @override
@@ -179,393 +204,199 @@ class _PrinterScanPageState extends State<PrinterScanPage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Pilih Printer Bluetooth'),
+        elevation: 0,
+        centerTitle: true,
+        title: const Text(
+          'Bluetooth Printer',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
         backgroundColor: AppColors.primary,
-        foregroundColor: AppColors.textWhite,
+        foregroundColor: Colors.white,
         actions: [
           IconButton(
             icon: const Icon(Icons.help_outline),
             onPressed: () {
               showDialog(
                 context: context,
-                builder: (context) => AlertDialog(
-                  title: const Text('Cara Menggunakan'),
-                  content: const SingleChildScrollView(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          'Aplikasi ini hanya menampilkan printer yang sudah dipasangkan (paired) di pengaturan Bluetooth perangkat Anda.',
-                          style: TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                        SizedBox(height: 16),
-                        Text('Langkah-langkah:'),
-                        SizedBox(height: 8),
-                        Text('1. Buka Pengaturan Bluetooth di perangkat Anda'),
-                        SizedBox(height: 4),
-                        Text('2. Pastikan Bluetooth aktif'),
-                        SizedBox(height: 4),
-                        Text('3. Pindai dan pasangkan printer thermal Anda'),
-                        SizedBox(height: 4),
-                        Text('4. Kembali ke aplikasi dan tekan tombol Refresh'),
-                        SizedBox(height: 4),
-                        Text('5. Pilih printer dari daftar yang muncul'),
-                        SizedBox(height: 16),
-                        Text(
-                          'Catatan: Printer harus sudah dipasangkan terlebih dahulu di pengaturan perangkat sebelum muncul di aplikasi.',
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontStyle: FontStyle.italic,
-                          ),
-                        ),
-                      ],
-                    ),
+                builder: (_) => const AlertDialog(
+                  title: Text("How to Connect"),
+                  content: Text(
+                    "1. Turn on Bluetooth\n"
+                    "2. Pair printer in phone settings\n"
+                    "3. Return to the app\n"
+                    "4. Tap refresh\n"
+                    "5. Select the printer",
                   ),
-                  actions: [
-                    TextButton(
-                      onPressed: () => Navigator.pop(context),
-                      child: const Text('Mengerti'),
-                    ),
-                  ],
                 ),
               );
             },
-            tooltip: 'Bantuan',
           ),
-          if (!_isLoading)
-            IconButton(
-              icon: const Icon(Icons.refresh),
-              onPressed: _loadPairedDevices,
-              tooltip: 'Refresh',
-            ),
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            onPressed: _loadPairedDevices,
+          ),
         ],
       ),
       body: Column(
         children: [
-          // Bluetooth Status
+
           if (!_isBluetoothAvailable)
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(AppSizes.paddingM),
-              color: AppColors.error.withValues(alpha: 0.1),
-              child: Row(
-                children: [
-                  Icon(
-                    Icons.bluetooth_disabled,
-                    color: AppColors.error,
-                  ),
-                  const SizedBox(width: AppSizes.paddingS),
-                  Expanded(
-                    child: Text(
-                      'Izin Bluetooth tidak diberikan. Silakan berikan izin Bluetooth di pengaturan aplikasi.',
-                      style: TextStyle(
-                        color: AppColors.error,
-                        fontSize: AppSizes.fontSizeS,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
+            bluetoothWarning("Bluetooth permission not granted"),
 
-          // Bluetooth Not Enabled
           if (_isBluetoothAvailable && !_isBluetoothEnabled)
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(AppSizes.paddingM),
-              color: AppColors.error.withValues(alpha: 0.1),
-              child: Row(
-                children: [
-                  Icon(
-                    Icons.bluetooth_disabled,
-                    color: AppColors.error,
-                  ),
-                  const SizedBox(width: AppSizes.paddingS),
-                  Expanded(
-                    child: Text(
-                      'Bluetooth tidak aktif. Silakan aktifkan Bluetooth di pengaturan perangkat.',
-                      style: TextStyle(
-                        color: AppColors.error,
-                        fontSize: AppSizes.fontSizeS,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
+            bluetoothWarning("Bluetooth is turned off"),
 
-          // Connection Status
           if (connectedDevice != null && _printerService.isConnected)
             Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(AppSizes.paddingM),
-              color: AppColors.success.withValues(alpha: 0.1),
+              margin: const EdgeInsets.all(12),
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: Colors.green.withOpacity(0.08),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.green.withOpacity(0.2)),
+              ),
               child: Row(
                 children: [
-                  Icon(
-                    Icons.bluetooth_connected,
-                    color: AppColors.success,
-                  ),
-                  const SizedBox(width: AppSizes.paddingS),
+                  const Icon(Icons.print, color: Colors.green),
+                  const SizedBox(width: 12),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          'Terhubung',
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            color: AppColors.success,
-                          ),
+                        const Text(
+                          "Connected Printer",
+                          style: TextStyle(fontWeight: FontWeight.bold),
                         ),
-                        Text(
-                          connectedDevice.name,
-                          style: TextStyle(
-                            fontSize: AppSizes.fontSizeS,
-                            color: AppColors.textSecondary,
-                          ),
-                        ),
+                        Text(connectedDevice.name),
                       ],
                     ),
                   ),
                   IconButton(
                     icon: const Icon(Icons.close),
                     onPressed: _disconnect,
-                    tooltip: 'Disconnect',
-                  ),
+                  )
                 ],
               ),
             ),
 
-          // Error Message (only show if not in empty state)
-          if (_errorMessage != null && _devices.isNotEmpty)
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(AppSizes.paddingM),
-              color: AppColors.error.withValues(alpha: 0.1),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Icon(
-                    Icons.error_outline,
-                    color: AppColors.error,
-                  ),
-                  const SizedBox(width: AppSizes.paddingS),
-                  Expanded(
-                    child: Text(
-                      _errorMessage!,
-                      style: TextStyle(
-                        color: AppColors.error,
-                        fontSize: AppSizes.fontSizeS,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-          // Device List
           Expanded(
             child: !_isBluetoothAvailable || !_isBluetoothEnabled
                 ? Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.bluetooth_disabled,
-                          size: 64,
-                          color: AppColors.textSecondary,
-                        ),
-                        const SizedBox(height: AppSizes.paddingM),
-                        Text(
-                          !_isBluetoothAvailable
-                              ? 'Izin Bluetooth tidak diberikan'
-                              : 'Bluetooth tidak aktif',
-                          style: TextStyle(
-                            color: AppColors.textSecondary,
-                            fontSize: AppSizes.fontSizeM,
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                        const SizedBox(height: AppSizes.paddingM),
-                        CustomButton(
-                          text: 'Coba Lagi',
-                          onPressed: _initializeBluetooth,
-                          icon: Icons.refresh,
-                        ),
-                      ],
+                    child: ElevatedButton.icon(
+                      onPressed: _initializeBluetooth,
+                      icon: const Icon(Icons.refresh),
+                      label: const Text("Try Again"),
                     ),
                   )
                 : _isLoading
                     ? const LoadingWidget()
                     : _devices.isEmpty
                         ? Center(
-                            child: SingleChildScrollView(
-                              padding: const EdgeInsets.all(AppSizes.paddingL),
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Icon(
-                                    Icons.bluetooth_searching,
-                                    size: 64,
-                                    color: AppColors.textSecondary,
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  Icons.print_disabled,
+                                  size: 70,
+                                  color: Colors.grey[400],
+                                ),
+                                const SizedBox(height: 16),
+                                const Text(
+                                  "No printers found",
+                                  style: TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
                                   ),
-                                  const SizedBox(height: AppSizes.paddingM),
-                                  Text(
-                                    'Tidak ada printer ditemukan',
-                                    style: TextStyle(
-                                      fontSize: AppSizes.fontSizeL,
-                                      fontWeight: FontWeight.bold,
-                                      color: AppColors.textPrimary,
-                                    ),
-                                    textAlign: TextAlign.center,
-                                  ),
-                                  const SizedBox(height: AppSizes.paddingM),
-                                  if (_errorMessage != null && _errorMessage!.contains('Cara mengatasi'))
-                                    Container(
-                                      width: double.infinity,
-                                      padding: const EdgeInsets.all(AppSizes.paddingM),
-                                      margin: const EdgeInsets.symmetric(horizontal: AppSizes.paddingM),
-                                      decoration: BoxDecoration(
-                                        color: AppColors.info.withValues(alpha: 0.1),
-                                        borderRadius: BorderRadius.circular(8),
-                                        border: Border.all(
-                                          color: AppColors.info.withValues(alpha: 0.3),
-                                        ),
-                                      ),
-                                      child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                        children: [
-                                          Row(
-                                            children: [
-                                              Icon(
-                                                Icons.info_outline,
-                                                color: AppColors.info,
-                                                size: 20,
-                                              ),
-                                              const SizedBox(width: AppSizes.paddingS),
-                                              Text(
-                                                'Cara mengatasi:',
-                                                style: TextStyle(
-                                                  fontSize: AppSizes.fontSizeM,
-                                                  fontWeight: FontWeight.bold,
-                                                  color: AppColors.info,
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                          const SizedBox(height: AppSizes.paddingS),
-                                          ..._errorMessage!
-                                              .split('\n')
-                                              .where((line) => line.trim().isNotEmpty && RegExp(r'^\d+\.').hasMatch(line.trim()))
-                                              .map((line) => Padding(
-                                                    padding: const EdgeInsets.only(bottom: AppSizes.paddingS),
-                                                    child: Row(
-                                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                                      children: [
-                                                        Text(
-                                                          '• ',
-                                                          style: TextStyle(
-                                                            fontSize: AppSizes.fontSizeS,
-                                                            color: AppColors.textPrimary,
-                                                            fontWeight: FontWeight.bold,
-                                                          ),
-                                                        ),
-                                                        Expanded(
-                                                          child: Text(
-                                                            line.trim().replaceFirst(RegExp(r'^\d+\.\s*'), ''),
-                                                            style: TextStyle(
-                                                              fontSize: AppSizes.fontSizeS,
-                                                              color: AppColors.textPrimary,
-                                                            ),
-                                                          ),
-                                                        ),
-                                                      ],
-                                                    ),
-                                                  )),
-                                        ],
-                                      ),
-                                    )
-                                  else if (_errorMessage != null)
-                                    Container(
-                                      width: double.infinity,
-                                      padding: const EdgeInsets.all(AppSizes.paddingM),
-                                      margin: const EdgeInsets.symmetric(horizontal: AppSizes.paddingM),
-                                      decoration: BoxDecoration(
-                                        color: AppColors.error.withValues(alpha: 0.1),
-                                        borderRadius: BorderRadius.circular(8),
-                                        border: Border.all(
-                                          color: AppColors.error.withValues(alpha: 0.3),
-                                        ),
-                                      ),
-                                      child: Text(
-                                        _errorMessage!,
-                                        style: TextStyle(
-                                          fontSize: AppSizes.fontSizeS,
-                                          color: AppColors.error,
-                                        ),
-                                      ),
-                                    ),
-                                  const SizedBox(height: AppSizes.paddingL),
-                                  CustomButton(
-                                    text: 'Refresh',
-                                    onPressed: _loadPairedDevices,
-                                    icon: Icons.refresh,
-                                  ),
-                                ],
-                              ),
+                                ),
+                                const SizedBox(height: 6),
+                                const Text(
+                                  "Pair printer in Bluetooth settings",
+                                  style: TextStyle(color: Colors.grey),
+                                ),
+                                const SizedBox(height: 20),
+                                ElevatedButton.icon(
+                                  onPressed: _loadPairedDevices,
+                                  icon: const Icon(Icons.refresh),
+                                  label: const Text("Refresh"),
+                                )
+                              ],
                             ),
                           )
                         : ListView.builder(
-                            padding: const EdgeInsets.all(AppSizes.paddingM),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 14, vertical: 10),
                             itemCount: _devices.length,
                             itemBuilder: (context, index) {
                               final device = _devices[index];
-                              final isConnected = connectedDevice?.macAdress == device.macAdress;
-                              final isConnecting = _isConnecting && _selectedDevice?.macAdress == device.macAdress;
 
-                              return Card(
-                                margin: const EdgeInsets.only(bottom: AppSizes.paddingS),
+                              final isConnected =
+                                  connectedDevice?.macAdress ==
+                                      device.macAdress;
+
+                              final isConnecting =
+                                  _isConnecting &&
+                                      _selectedDevice?.macAdress ==
+                                          device.macAdress;
+
+                              return Container(
+                                margin: const EdgeInsets.only(bottom: 10),
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(14),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      blurRadius: 6,
+                                      color: Colors.black.withOpacity(0.05),
+                                      offset: const Offset(0, 3),
+                                    )
+                                  ],
+                                ),
                                 child: ListTile(
-                                  leading: Icon(
-                                    isConnected
-                                        ? Icons.bluetooth_connected
-                                        : Icons.bluetooth,
-                                    color: isConnected
-                                        ? AppColors.success
-                                        : AppColors.textSecondary,
+                                  contentPadding:
+                                      const EdgeInsets.symmetric(
+                                    horizontal: 16,
+                                    vertical: 10,
+                                  ),
+                                  leading: CircleAvatar(
+                                    backgroundColor: isConnected
+                                        ? Colors.green.withOpacity(0.1)
+                                        : Colors.grey.withOpacity(0.1),
+                                    child: Icon(
+                                      Icons.print,
+                                      color: isConnected
+                                          ? Colors.green
+                                          : Colors.grey,
+                                    ),
                                   ),
                                   title: Text(
                                     device.name,
                                     style: TextStyle(
                                       fontWeight: isConnected
                                           ? FontWeight.bold
-                                          : FontWeight.normal,
+                                          : FontWeight.w500,
                                     ),
                                   ),
-                                  subtitle: Text(device.macAdress),
+                                  subtitle: Text(
+                                    device.macAdress,
+                                    style: const TextStyle(fontSize: 12),
+                                  ),
                                   trailing: isConnected
-                                      ? Icon(
-                                          Icons.check_circle,
-                                          color: AppColors.success,
-                                        )
+                                      ? const Icon(Icons.check_circle,
+                                          color: Colors.green)
                                       : isConnecting
                                           ? const SizedBox(
-                                              width: 24,
-                                              height: 24,
-                                              child: CircularProgressIndicator(
-                                                strokeWidth: 2,
-                                              ),
+                                              width: 20,
+                                              height: 20,
+                                              child:
+                                                  CircularProgressIndicator(
+                                                      strokeWidth: 2),
                                             )
-                                          : IconButton(
-                                              icon: const Icon(Icons.link),
-                                              onPressed: () => _connectToDevice(device),
-                                              tooltip: 'Connect',
+                                          : ElevatedButton(
+                                              onPressed: () =>
+                                                  _connectToDevice(device),
+                                              child:
+                                                  const Text("Connect"),
                                             ),
-                                  onTap: isConnected || isConnecting
-                                      ? null
-                                      : () => _connectToDevice(device),
                                 ),
                               );
                             },

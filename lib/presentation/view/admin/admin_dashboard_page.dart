@@ -30,11 +30,18 @@ class AdminDashboardPage extends StatefulWidget {
   State<AdminDashboardPage> createState() => _AdminDashboardPageState();
 }
 
-class _AdminDashboardPageState extends State<AdminDashboardPage> with WidgetsBindingObserver {
+class _AdminDashboardPageState extends State<AdminDashboardPage>
+    with WidgetsBindingObserver {
   int _selectedIndex = 0;
   String _selectedPeriod = 'today';
   final TransactionService _transactionService = TransactionService();
   List<Map<String, dynamic>> _soldProductsToday = [];
+
+  static const Color _bgColor = Color(0xFFF3F6F2);
+  static const Color _softGreen = Color(0xFFE4F0E6);
+  static const Color _primaryGreen = Color(0xFF2E9E4D);
+  static const Color _darkText = Color(0xFF1D1D1F);
+  static const Color _softText = Color(0xFF6E6E73);
 
   @override
   void initState() {
@@ -42,7 +49,6 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> with WidgetsBin
     WidgetsBinding.instance.addObserver(this);
     context.read<ChartBloc>().add(LoadChartDataEvent(_selectedPeriod));
     _loadSoldProductsToday();
-    // Also load history initially
     context.read<HistoryBloc>().add(const LoadHistoryEvent());
   }
 
@@ -52,17 +58,9 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> with WidgetsBin
     super.dispose();
   }
 
-  // Note: We don't use didChangeDependencies here because it's called too frequently
-  // Instead, we refresh data when:
-  // 1. User switches to dashboard tab (in onTap)
-  // 2. App comes to foreground (in didChangeAppLifecycleState)
-  // 3. User manually refreshes (via refresh button)
-  // 4. Period changes (in _onPeriodChanged)
-
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     super.didChangeAppLifecycleState(state);
-    // When app comes to foreground, refresh dashboard data
     if (state == AppLifecycleState.resumed && _selectedIndex == 0) {
       _refreshDashboardData();
     }
@@ -74,7 +72,6 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> with WidgetsBin
     if (_selectedPeriod == 'today') {
       _loadSoldProductsToday();
     }
-    // Also refresh history
     context.read<HistoryBloc>().add(const LoadHistoryEvent());
   }
 
@@ -119,50 +116,91 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> with WidgetsBin
   List<Widget> _getAppBarActions() {
     return [
       if (_selectedIndex == 0)
-        // Dashboard tab: Show refresh button
-        IconButton(
-          icon: const Icon(Icons.refresh),
-          onPressed: () {
-            _refreshDashboardData();
-          },
-          tooltip: 'Refresh Dashboard',
+        Padding(
+          padding: const EdgeInsets.only(right: 4),
+          child: _buildCircleIconButton(
+            icon: Icons.refresh_rounded,
+            onTap: _refreshDashboardData,
+          ),
         ),
       if (_selectedIndex == 2)
-        // History tab: Show refresh button
-        IconButton(
-          icon: const Icon(Icons.refresh),
-          onPressed: () {
-            context.read<HistoryBloc>().add(const LoadHistoryEvent());
-          },
-          tooltip: 'Refresh',
+        Padding(
+          padding: const EdgeInsets.only(right: 4),
+          child: _buildCircleIconButton(
+            icon: Icons.refresh_rounded,
+            onTap: () {
+              context.read<HistoryBloc>().add(const LoadHistoryEvent());
+            },
+          ),
         ),
-      IconButton(
-        icon: const Icon(Icons.logout),
-        onPressed: () {
-          context.read<AuthBloc>().add(const LogoutEvent());
-        },
-        tooltip: 'Logout',
+      Padding(
+        padding: const EdgeInsets.only(right: 12),
+        child: _buildCircleIconButton(
+          icon: Icons.logout_rounded,
+          onTap: () {
+            context.read<AuthBloc>().add(const LogoutEvent());
+          },
+        ),
       ),
     ];
+  }
+
+  Widget _buildCircleIconButton({
+    required IconData icon,
+    required VoidCallback onTap,
+  }) {
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: 8),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: IconButton(
+        onPressed: onTap,
+        icon: Icon(icon, color: _darkText),
+        tooltip: '',
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: _bgColor,
       appBar: AppBar(
-        title: Text(_getAppBarTitle()),
-        backgroundColor: AppColors.primary,
-        foregroundColor: AppColors.textWhite,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        backgroundColor: Colors.transparent,
+        foregroundColor: _darkText,
+        centerTitle: false,
+        title: Text(
+          _getAppBarTitle(),
+          style: const TextStyle(
+            fontWeight: FontWeight.w800,
+            fontSize: 22,
+            color: _darkText,
+          ),
+        ),
         actions: _getAppBarActions(),
       ),
-      body: IndexedStack(
-        index: _selectedIndex,
-        children: [
-          _buildDashboardTab(),
-          const AdminProductPageContent(),
-          const AdminHistoryPageContent(),
-          const AdminReportPageContent(),
-        ],
+      body: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 4, 16, 0),
+        child: IndexedStack(
+          index: _selectedIndex,
+          children: [
+            _buildDashboardTab(),
+            const AdminProductPageContent(),
+            const AdminHistoryPageContent(),
+            const AdminReportPageContent(),
+          ],
+        ),
       ),
       floatingActionButton: _selectedIndex == 1
           ? Builder(
@@ -181,58 +219,85 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> with WidgetsBin
                       }
                     });
                   },
-                  backgroundColor: AppColors.primary,
-                  child: const Icon(Icons.add, color: AppColors.textWhite),
+                  backgroundColor: _primaryGreen,
+                  elevation: 6,
+                  child: const Icon(Icons.add_rounded, color: Colors.white),
                 );
               },
             )
           : null,
-      bottomNavigationBar: BottomNavigationBar(
-        type: BottomNavigationBarType.fixed,
-        currentIndex: _selectedIndex,
-        onTap: (index) {
-          final productBloc = context.read<ProductBloc>();
-          final historyBloc = context.read<HistoryBloc>();
-          
-          setState(() {
-            _selectedIndex = index;
-          });
-          
-          if (index == 0) {
-            // Dashboard tab: Refresh all dashboard data
-            _refreshDashboardData();
-          } else if (index == 1) {
-            // Products tab: Load products
-            if (mounted) {
-              productBloc.add(const LoadProductsEvent());
-            }
-          } else if (index == 2) {
-            // History tab: Load history
-            if (mounted) {
-              historyBloc.add(const LoadHistoryEvent());
-            }
-          } else if (index == 3) {
-            // Report page will load data in initState
-          }
-        },
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.dashboard),
-            label: AppStrings.dashboard,
+      bottomNavigationBar: Container(
+        margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(24),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.06),
+              blurRadius: 20,
+              offset: const Offset(0, 8),
+            ),
+          ],
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(24),
+          child: BottomNavigationBar(
+            type: BottomNavigationBarType.fixed,
+            currentIndex: _selectedIndex,
+            backgroundColor: Colors.white,
+            elevation: 0,
+            selectedItemColor: _primaryGreen,
+            unselectedItemColor: Colors.grey,
+            selectedLabelStyle: const TextStyle(
+              fontWeight: FontWeight.w700,
+              fontSize: 12,
+            ),
+            unselectedLabelStyle: const TextStyle(
+              fontWeight: FontWeight.w500,
+              fontSize: 12,
+            ),
+            onTap: (index) {
+              final productBloc = context.read<ProductBloc>();
+              final historyBloc = context.read<HistoryBloc>();
+
+              setState(() {
+                _selectedIndex = index;
+              });
+
+              if (index == 0) {
+                _refreshDashboardData();
+              } else if (index == 1) {
+                if (mounted) {
+                  productBloc.add(const LoadProductsEvent());
+                }
+              } else if (index == 2) {
+                if (mounted) {
+                  historyBloc.add(const LoadHistoryEvent());
+                }
+              } else if (index == 3) {
+                // Report page will load data in initState
+              }
+            },
+            items: const [
+              BottomNavigationBarItem(
+                icon: Icon(Icons.dashboard_rounded),
+                label: AppStrings.dashboard,
+              ),
+              BottomNavigationBarItem(
+                icon: Icon(Icons.inventory_2_rounded),
+                label: AppStrings.products,
+              ),
+              BottomNavigationBarItem(
+                icon: Icon(Icons.history_rounded),
+                label: AppStrings.history,
+              ),
+              BottomNavigationBarItem(
+                icon: Icon(Icons.assessment_rounded),
+                label: AppStrings.report,
+              ),
+            ],
           ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.inventory_2),
-            label: AppStrings.products,
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.history),
-            label: AppStrings.history,
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.report),
-            label: AppStrings.report,
-          ),
-        ],
+        ),
       ),
     );
   }
@@ -242,17 +307,19 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> with WidgetsBin
       builder: (context, constraints) {
         final isMobile = Responsive.isMobile(context);
         final isTablet = Responsive.isTablet(context);
-        
+
         return SingleChildScrollView(
+          physics: const BouncingScrollPhysics(),
           padding: Responsive.getResponsivePadding(context),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Period Selector - Responsive
+              _buildDashboardHero(),
+              const SizedBox(height: 18),
+
               if (isMobile)
-                // Mobile: Use Wrap or Grid
                 Wrap(
-                  alignment: WrapAlignment.center,
+                  alignment: WrapAlignment.start,
                   spacing: AppSizes.paddingS,
                   runSpacing: AppSizes.paddingS,
                   children: [
@@ -263,41 +330,50 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> with WidgetsBin
                   ],
                 )
               else
-                // Tablet/Desktop: Use Row
                 Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: [
-                    Expanded(child: _buildPeriodButton(context, 'today', AppStrings.today)),
+                    Expanded(
+                        child: _buildPeriodButton(
+                            context, 'today', AppStrings.today)),
                     const SizedBox(width: AppSizes.paddingS),
-                    Expanded(child: _buildPeriodButton(context, 'week', AppStrings.thisWeek)),
+                    Expanded(
+                        child: _buildPeriodButton(
+                            context, 'week', AppStrings.thisWeek)),
                     const SizedBox(width: AppSizes.paddingS),
-                    Expanded(child: _buildPeriodButton(context, 'month', AppStrings.thisMonth)),
+                    Expanded(
+                        child: _buildPeriodButton(
+                            context, 'month', AppStrings.thisMonth)),
                     const SizedBox(width: AppSizes.paddingS),
-                    Expanded(child: _buildPeriodButton(context, 'year', AppStrings.thisYear)),
+                    Expanded(
+                        child: _buildPeriodButton(
+                            context, 'year', AppStrings.thisYear)),
                   ],
                 ),
+
               const SizedBox(height: AppSizes.paddingL),
-              // Sold Products Today
+
               if (_selectedPeriod == 'today') ...[
-                const Text(
-                  AppStrings.soldProducts,
-                  style: TextStyle(
-                    fontSize: AppSizes.fontSizeXL,
-                    fontWeight: FontWeight.bold,
+                const Padding(
+                  padding: EdgeInsets.only(left: 2, bottom: 12),
+                  child: Text(
+                    AppStrings.soldProducts,
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w800,
+                      color: _darkText,
+                    ),
                   ),
                 ),
-                const SizedBox(height: AppSizes.paddingM),
                 _buildSoldProductsList(),
                 const SizedBox(height: AppSizes.paddingL),
               ],
-              // Chart Data - Responsive Grid
+
               BlocBuilder<ChartBloc, ChartState>(
                 builder: (context, state) {
                   if (state is ChartLoading) {
                     return const LoadingWidget();
                   } else if (state is ChartLoaded) {
                     if (isMobile) {
-                      // Mobile: Single column
                       return Column(
                         children: [
                           _buildStatCard(
@@ -305,7 +381,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> with WidgetsBin
                             AppStrings.income,
                             CurrencyFormatter.format(state.income),
                             AppColors.chartIncome,
-                            Icons.trending_up,
+                            Icons.trending_up_rounded,
                           ),
                           const SizedBox(height: AppSizes.paddingM),
                           _buildStatCard(
@@ -313,7 +389,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> with WidgetsBin
                             AppStrings.expense,
                             CurrencyFormatter.format(state.expense),
                             AppColors.chartExpense,
-                            Icons.trending_down,
+                            Icons.trending_down_rounded,
                           ),
                           const SizedBox(height: AppSizes.paddingM),
                           _buildStatCard(
@@ -321,7 +397,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> with WidgetsBin
                             AppStrings.profit,
                             CurrencyFormatter.format(state.profit),
                             AppColors.chartProfit,
-                            Icons.arrow_upward,
+                            Icons.arrow_upward_rounded,
                           ),
                           const SizedBox(height: AppSizes.paddingM),
                           _buildStatCard(
@@ -329,60 +405,77 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> with WidgetsBin
                             AppStrings.loss,
                             CurrencyFormatter.format(state.loss),
                             AppColors.chartLoss,
-                            Icons.arrow_downward,
+                            Icons.arrow_downward_rounded,
                           ),
                         ],
                       );
                     } else {
-                      // Tablet/Desktop: Grid layout
                       return GridView.count(
                         shrinkWrap: true,
                         physics: const NeverScrollableScrollPhysics(),
                         crossAxisCount: isTablet ? 2 : 4,
                         crossAxisSpacing: AppSizes.paddingM,
                         mainAxisSpacing: AppSizes.paddingM,
-                        childAspectRatio: isTablet ? 1.5 : 1.2,
+                        childAspectRatio: isTablet ? 1.55 : 1.18,
                         children: [
                           _buildStatCard(
                             context,
                             AppStrings.income,
                             CurrencyFormatter.format(state.income),
                             AppColors.chartIncome,
-                            Icons.trending_up,
+                            Icons.trending_up_rounded,
                           ),
                           _buildStatCard(
                             context,
                             AppStrings.expense,
                             CurrencyFormatter.format(state.expense),
                             AppColors.chartExpense,
-                            Icons.trending_down,
+                            Icons.trending_down_rounded,
                           ),
                           _buildStatCard(
                             context,
                             AppStrings.profit,
                             CurrencyFormatter.format(state.profit),
                             AppColors.chartProfit,
-                            Icons.arrow_upward,
+                            Icons.arrow_upward_rounded,
                           ),
                           _buildStatCard(
                             context,
                             AppStrings.loss,
                             CurrencyFormatter.format(state.loss),
                             AppColors.chartLoss,
-                            Icons.arrow_downward,
+                            Icons.arrow_downward_rounded,
                           ),
                         ],
                       );
                     }
                   } else if (state is ChartError) {
-                    return Center(
+                    return Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(24),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(24),
+                      ),
                       child: Text(
                         state.message,
-                        style: const TextStyle(color: AppColors.error),
+                        style: const TextStyle(
+                          color: AppColors.error,
+                          fontWeight: FontWeight.w600,
+                        ),
+                        textAlign: TextAlign.center,
                       ),
                     );
                   } else {
-                    return const EmptyWidget(message: AppStrings.noData);
+                    return Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(24),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(24),
+                      ),
+                      child: const EmptyWidget(message: AppStrings.noData),
+                    );
                   }
                 },
               ),
@@ -393,34 +486,109 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> with WidgetsBin
     );
   }
 
+  Widget _buildDashboardHero() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: _softGreen,
+        borderRadius: BorderRadius.circular(24),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: const [
+                Text(
+                  'Admin Dashboard',
+                  style: TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.w800,
+                    color: _darkText,
+                  ),
+                ),
+                SizedBox(height: 8),
+                Text(
+                  'Pantau penjualan, performa transaksi, dan aktivitas toko dalam satu tampilan.',
+                  style: TextStyle(
+                    fontSize: 13,
+                    height: 1.4,
+                    color: _softText,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 12),
+          Container(
+            width: 60,
+            height: 60,
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.92),
+              borderRadius: BorderRadius.circular(18),
+            ),
+            child: const Icon(
+              Icons.space_dashboard_rounded,
+              size: 32,
+              color: _primaryGreen,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildPeriodButton(BuildContext context, String period, String label) {
     final isSelected = _selectedPeriod == period;
     final isMobile = Responsive.isMobile(context);
-    
+
     return SizedBox(
       width: isMobile ? null : double.infinity,
-      child: ElevatedButton(
-        onPressed: () => _onPeriodChanged(period),
-        style: ElevatedButton.styleFrom(
-          backgroundColor: isSelected ? AppColors.primary : AppColors.surface,
-          foregroundColor: isSelected ? AppColors.textWhite : AppColors.textPrimary,
-          padding: EdgeInsets.symmetric(
-            horizontal: isMobile ? AppSizes.paddingS : AppSizes.paddingM,
-            vertical: AppSizes.paddingS,
-          ),
-          minimumSize: Size(isMobile ? 0 : double.infinity, AppSizes.buttonHeightM),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        decoration: BoxDecoration(
+          color: isSelected ? _primaryGreen : Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: isSelected
+              ? [
+                  BoxShadow(
+                    color: _primaryGreen.withValues(alpha: 0.20),
+                    blurRadius: 14,
+                    offset: const Offset(0, 6),
+                  ),
+                ]
+              : [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.04),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
         ),
-        child: FittedBox(
-          fit: BoxFit.scaleDown,
-          child: Text(
-            label,
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: Responsive.getResponsiveFontSize(
-                context,
-                mobile: AppSizes.fontSizeS,
-                tablet: AppSizes.fontSizeM,
-                desktop: AppSizes.fontSizeL,
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            borderRadius: BorderRadius.circular(16),
+            onTap: () => _onPeriodChanged(period),
+            child: Padding(
+              padding: EdgeInsets.symmetric(
+                horizontal: isMobile ? AppSizes.paddingM : AppSizes.paddingM,
+                vertical: 12,
+              ),
+              child: Text(
+                label,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: Responsive.getResponsiveFontSize(
+                    context,
+                    mobile: AppSizes.fontSizeS,
+                    tablet: AppSizes.fontSizeM,
+                    desktop: AppSizes.fontSizeL,
+                  ),
+                  fontWeight: FontWeight.w700,
+                  color: isSelected ? Colors.white : _darkText,
+                ),
               ),
             ),
           ),
@@ -438,9 +606,19 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> with WidgetsBin
   ) {
     final isMobile = Responsive.isMobile(context);
     final isTablet = Responsive.isTablet(context);
-    
-    return Card(
-      elevation: 2,
+
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 16,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
       child: Padding(
         padding: EdgeInsets.all(
           isMobile ? AppSizes.paddingM : AppSizes.paddingL,
@@ -450,16 +628,16 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> with WidgetsBin
                 children: [
                   Container(
                     padding: EdgeInsets.all(
-                      isMobile ? AppSizes.paddingS : AppSizes.paddingM,
+                      isMobile ? AppSizes.paddingM : AppSizes.paddingM,
                     ),
                     decoration: BoxDecoration(
-                      color: color.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(AppSizes.radiusM),
+                      color: color.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(18),
                     ),
                     child: Icon(
                       icon,
                       color: color,
-                      size: isMobile ? 24 : 32,
+                      size: isMobile ? 24 : 30,
                     ),
                   ),
                   const SizedBox(width: AppSizes.paddingM),
@@ -476,7 +654,8 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> with WidgetsBin
                               mobile: AppSizes.fontSizeS,
                               tablet: AppSizes.fontSizeM,
                             ),
-                            color: AppColors.textSecondary,
+                            color: _softText,
+                            fontWeight: FontWeight.w600,
                           ),
                         ),
                         const SizedBox(height: AppSizes.paddingXS),
@@ -492,7 +671,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> with WidgetsBin
                                 tablet: AppSizes.fontSizeXL,
                                 desktop: 24,
                               ),
-                              fontWeight: FontWeight.bold,
+                              fontWeight: FontWeight.w800,
                               color: color,
                             ),
                           ),
@@ -508,17 +687,18 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> with WidgetsBin
                   Container(
                     padding: const EdgeInsets.all(AppSizes.paddingL),
                     decoration: BoxDecoration(
-                      color: color.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(AppSizes.radiusL),
+                      color: color.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(22),
                     ),
-                    child: Icon(icon, color: color, size: 48),
+                    child: Icon(icon, color: color, size: 42),
                   ),
                   const SizedBox(height: AppSizes.paddingM),
                   Text(
                     title,
                     style: const TextStyle(
                       fontSize: AppSizes.fontSizeM,
-                      color: AppColors.textSecondary,
+                      color: _softText,
+                      fontWeight: FontWeight.w600,
                     ),
                     textAlign: TextAlign.center,
                   ),
@@ -529,7 +709,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> with WidgetsBin
                       value,
                       style: TextStyle(
                         fontSize: 20,
-                        fontWeight: FontWeight.bold,
+                        fontWeight: FontWeight.w800,
                         color: color,
                       ),
                       textAlign: TextAlign.center,
@@ -543,41 +723,80 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> with WidgetsBin
 
   Widget _buildSoldProductsList() {
     if (_soldProductsToday.isEmpty) {
-      return const Card(
-        child: Padding(
+      return Container(
+        width: double.infinity,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(24),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.04),
+              blurRadius: 14,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: const Padding(
           padding: EdgeInsets.all(AppSizes.paddingL),
           child: Center(
-            child: Text('Tidak ada produk terjual hari ini'),
+            child: Text(
+              'No products sold today',
+              style: TextStyle(
+                color: _softText,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
           ),
         ),
       );
     }
 
-    return Card(
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 16,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Padding(
-            padding: const EdgeInsets.all(AppSizes.paddingM),
+            padding: const EdgeInsets.fromLTRB(18, 18, 10, 10),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text(
-                  'Produk Terjual Hari Ini',
-                  style: TextStyle(
-                    fontSize: AppSizes.fontSizeL,
-                    fontWeight: FontWeight.bold,
+                const Expanded(
+                  child: Text(
+                    'Products Sold Today',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w800,
+                      color: _darkText,
+                    ),
                   ),
                 ),
-                IconButton(
-                  icon: const Icon(Icons.refresh),
-                  onPressed: _loadSoldProductsToday,
-                  tooltip: 'Refresh',
+                Container(
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF4F7F4),
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: IconButton(
+                    icon: const Icon(Icons.refresh_rounded),
+                    onPressed: _loadSoldProductsToday,
+                    tooltip: 'Refresh',
+                    color: _darkText,
+                  ),
                 ),
               ],
             ),
           ),
-          const Divider(),
+          const Divider(height: 1, color: Color(0xFFEDEDED)),
           ListView.builder(
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
@@ -588,24 +807,69 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> with WidgetsBin
               final quantity = item['quantity'] as int;
               final total = item['total'] as int;
 
-              return ListTile(
-                contentPadding: const EdgeInsets.symmetric(
+              return Container(
+                padding: const EdgeInsets.symmetric(
                   horizontal: AppSizes.paddingL,
-                  vertical: AppSizes.paddingS,
+                  vertical: 14,
                 ),
-                title: Text(
-                  product.name,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                  ),
+                decoration: BoxDecoration(
+                  border: index == _soldProductsToday.length - 1
+                      ? null
+                      : const Border(
+                          bottom: BorderSide(
+                            color: Color(0xFFF0F0F0),
+                            width: 1,
+                          ),
+                        ),
                 ),
-                subtitle: Text('Jumlah: $quantity'),
-                trailing: Text(
-                  CurrencyFormatter.format(total),
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.primary,
-                  ),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 48,
+                      height: 48,
+                      decoration: BoxDecoration(
+                        color: _softGreen,
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: const Icon(
+                        Icons.inventory_2_rounded,
+                        color: _primaryGreen,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            product.name,
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w800,
+                              fontSize: 14,
+                              color: _darkText,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            'Quantity: $quantity',
+                            style: const TextStyle(
+                              color: _softText,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      CurrencyFormatter.format(total),
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w800,
+                        color: _primaryGreen,
+                        fontSize: 14,
+                      ),
+                    ),
+                  ],
                 ),
               );
             },
@@ -615,4 +879,3 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> with WidgetsBin
     );
   }
 }
-

@@ -249,7 +249,7 @@ class _UserCartPageState extends State<UserCartPage> {
                     } else {
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
-                          content: Text('Stok tidak mencukupi'),
+                          content: Text('Insufficient stock'),
                           backgroundColor: AppColors.error,
                         ),
                       );

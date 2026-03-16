@@ -51,7 +51,9 @@ class _UserProductPageState extends State<UserProductPage> {
       if (_selectedCategory == 'all') {
         context.read<ProductBloc>().add(const LoadProductsEvent());
       } else {
-        context.read<ProductBloc>().add(LoadProductsByCategoryEvent(_selectedCategory));
+        context.read<ProductBloc>().add(
+          LoadProductsByCategoryEvent(_selectedCategory),
+        );
       }
     } else {
       context.read<ProductBloc>().add(SearchProductsEvent(query));
@@ -62,10 +64,13 @@ class _UserProductPageState extends State<UserProductPage> {
     setState(() {
       _selectedCategory = category;
     });
+
     if (category == 'all') {
       context.read<ProductBloc>().add(const LoadProductsEvent());
     } else {
-      context.read<ProductBloc>().add(LoadProductsByCategoryEvent(category));
+      context.read<ProductBloc>().add(
+        LoadProductsByCategoryEvent(category),
+      );
     }
   }
 
@@ -73,7 +78,7 @@ class _UserProductPageState extends State<UserProductPage> {
     if (!product.isAvailable || product.isOutOfStock || product.stock <= 0) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Produk tidak tersedia'),
+          content: Text('Product not available'),
           backgroundColor: AppColors.error,
         ),
       );
@@ -81,9 +86,10 @@ class _UserProductPageState extends State<UserProductPage> {
     }
 
     context.read<OrderBloc>().add(AddToCartEvent(product: product));
+
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
-        content: Text('Produk ditambahkan ke keranjang'),
+        content: Text('Product added to cart'),
         backgroundColor: AppColors.success,
       ),
     );
@@ -92,14 +98,18 @@ class _UserProductPageState extends State<UserProductPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.grey.shade100,
+
       appBar: AppBar(
+        elevation: 0,
+        backgroundColor: const Color.fromARGB(255, 160, 218, 158),
         title: const Text(AppStrings.appName),
-        backgroundColor: AppColors.primary,
-        foregroundColor: AppColors.textWhite,
         actions: [
           BlocBuilder<OrderBloc, OrderState>(
             builder: (context, orderState) {
-              final cartItemCount = orderState is CartLoaded ? orderState.cartItems.length : 0;
+              final cartItemCount =
+                  orderState is CartLoaded ? orderState.cartItems.length : 0;
+
               return Stack(
                 children: [
                   IconButton(
@@ -112,7 +122,9 @@ class _UserProductPageState extends State<UserProductPage> {
                         ),
                       ).then((_) {
                         if (mounted) {
-                          context.read<OrderBloc>().add(const LoadCurrentCartEvent());
+                          context
+                              .read<OrderBloc>()
+                              .add(const LoadCurrentCartEvent());
                         }
                       });
                     },
@@ -121,23 +133,15 @@ class _UserProductPageState extends State<UserProductPage> {
                     Positioned(
                       right: 8,
                       top: 8,
-                      child: Container(
-                        padding: const EdgeInsets.all(4),
-                        decoration: const BoxDecoration(
-                          color: AppColors.error,
-                          shape: BoxShape.circle,
-                        ),
-                        constraints: const BoxConstraints(
-                          minWidth: 16,
-                          minHeight: 16,
-                        ),
+                      child: CircleAvatar(
+                        radius: 8,
+                        backgroundColor: AppColors.error,
                         child: Text(
-                          '$cartItemCount',
+                          "$cartItemCount",
                           style: const TextStyle(
-                            color: AppColors.textWhite,
                             fontSize: 10,
+                            color: Colors.white,
                           ),
-                          textAlign: TextAlign.center,
                         ),
                       ),
                     ),
@@ -153,74 +157,88 @@ class _UserProductPageState extends State<UserProductPage> {
           ),
         ],
       ),
+
       body: Column(
         children: [
-          // Search and Filter
-          Padding(
+
+          /// SEARCH + CATEGORY
+          Container(
             padding: const EdgeInsets.all(AppSizes.paddingM),
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.vertical(
+                bottom: Radius.circular(20),
+              ),
+            ),
             child: Column(
               children: [
+
+                /// SEARCH
                 CustomTextField(
                   controller: _searchController,
                   hint: AppStrings.search,
                   prefixIcon: const Icon(Icons.search),
                   onChanged: _onSearch,
                 ),
-                const SizedBox(height: AppSizes.paddingM),
+
+                const SizedBox(height: 12),
+
                 _buildCategoryFilter(context),
               ],
             ),
           ),
-          // Product List
+
+          /// PRODUCT GRID
           Expanded(
             child: BlocBuilder<ProductBloc, ProductState>(
               builder: (context, state) {
+
                 if (state is ProductLoading) {
                   return const LoadingWidget();
-                } else if (state is ProductLoaded) {
-                  final availableProducts = state.products
-                      .where((p) => p.isAvailable && !p.isOutOfStock && p.stock > 0)
+                }
+
+                if (state is ProductLoaded) {
+
+                  final products = state.products
+                      .where((p) =>
+                          p.isAvailable &&
+                          !p.isOutOfStock &&
+                          p.stock > 0)
                       .toList();
 
-                  if (availableProducts.isEmpty) {
+                  if (products.isEmpty) {
                     return const EmptyWidget(
                       message: AppStrings.noData,
-                      icon: Icons.inventory_2_outlined,
+                      icon: Icons.inventory,
                     );
                   }
 
-                  return LayoutBuilder(
-                    builder: (context, constraints) {
-                      final isMobile = Responsive.isMobile(context);
-                      final isTablet = Responsive.isTablet(context);
-                      final crossAxisCount = Responsive.getGridCrossAxisCountForProducts(context);
-                      
-                      return GridView.builder(
-                        padding: Responsive.getResponsivePadding(context),
-                        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: crossAxisCount,
-                          crossAxisSpacing: AppSizes.paddingM,
-                          mainAxisSpacing: AppSizes.paddingM,
-                          childAspectRatio: isMobile ? 0.55 : (isTablet ? 0.65 : 0.75),
-                        ),
-                        itemCount: availableProducts.length,
-                        itemBuilder: (context, index) {
-                          final product = availableProducts[index];
-                          return _buildProductCard(context, product);
-                        },
-                      );
+                  final crossAxisCount =
+                      Responsive.getGridCrossAxisCountForProducts(context);
+
+                  return GridView.builder(
+                    padding: Responsive.getResponsivePadding(context),
+
+                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: crossAxisCount,
+                      crossAxisSpacing: 12,
+                      mainAxisSpacing: 12,
+                      childAspectRatio: 0.70,
+                    ),
+
+                    itemCount: products.length,
+
+                    itemBuilder: (context, index) {
+                      return _buildProductCard(context, products[index]);
                     },
                   );
-                } else if (state is ProductError) {
-                  return Center(
-                    child: Text(
-                      state.message,
-                      style: const TextStyle(color: AppColors.error),
-                    ),
-                  );
-                } else {
-                  return const EmptyWidget(message: AppStrings.noData);
                 }
+
+                if (state is ProductError) {
+                  return Center(child: Text(state.message));
+                }
+
+                return const EmptyWidget(message: AppStrings.noData);
               },
             ),
           ),
@@ -230,76 +248,41 @@ class _UserProductPageState extends State<UserProductPage> {
   }
 
   Widget _buildCategoryFilter(BuildContext context) {
-    final isMobile = Responsive.isMobile(context);
-    
-    return isMobile
-        ? Wrap(
-            spacing: AppSizes.paddingS,
-            runSpacing: AppSizes.paddingS,
-            alignment: WrapAlignment.center,
-            children: [
-              ChoiceChip(
-                label: const Text('Semua'),
-                selected: _selectedCategory == 'all',
-                onSelected: (selected) {
-                  if (selected) _onCategoryChanged('all');
-                },
-              ),
-              ChoiceChip(
-                label: const Text(AppStrings.food),
-                selected: _selectedCategory == 'food',
-                onSelected: (selected) {
-                  if (selected) _onCategoryChanged('food');
-                },
-              ),
-              ChoiceChip(
-                label: const Text(AppStrings.drink),
-                selected: _selectedCategory == 'drink',
-                onSelected: (selected) {
-                  if (selected) _onCategoryChanged('drink');
-                },
-              ),
-            ],
-          )
-        : Row(
-            children: [
-              Expanded(
-                child: ChoiceChip(
-                  label: const Text('Semua'),
-                  selected: _selectedCategory == 'all',
-                  onSelected: (selected) {
-                    if (selected) _onCategoryChanged('all');
-                  },
-                ),
-              ),
-              const SizedBox(width: AppSizes.paddingS),
-              Expanded(
-                child: ChoiceChip(
-                  label: const Text(AppStrings.food),
-                  selected: _selectedCategory == 'food',
-                  onSelected: (selected) {
-                    if (selected) _onCategoryChanged('food');
-                  },
-                ),
-              ),
-              const SizedBox(width: AppSizes.paddingS),
-              Expanded(
-                child: ChoiceChip(
-                  label: const Text(AppStrings.drink),
-                  selected: _selectedCategory == 'drink',
-                  onSelected: (selected) {
-                    if (selected) _onCategoryChanged('drink');
-                  },
-                ),
-              ),
-            ],
-          );
+    return Wrap(
+      spacing: 8,
+      children: [
+
+        ChoiceChip(
+          label: const Text("All"),
+          selected: _selectedCategory == "all",
+          onSelected: (v) {
+            if (v) _onCategoryChanged("all");
+          },
+        ),
+
+        ChoiceChip(
+          label: const Text(AppStrings.food),
+          selected: _selectedCategory == "food",
+          onSelected: (v) {
+            if (v) _onCategoryChanged("food");
+          },
+        ),
+
+        ChoiceChip(
+          label: const Text(AppStrings.drink),
+          selected: _selectedCategory == "drink",
+          onSelected: (v) {
+            if (v) _onCategoryChanged("drink");
+          },
+        ),
+      ],
+    );
   }
 
   Widget _buildProductCard(BuildContext context, ProductModel product) {
-    final isMobile = Responsive.isMobile(context);
-    
     return InkWell(
+      borderRadius: BorderRadius.circular(16),
+
       onTap: () {
         Navigator.push(
           context,
@@ -308,182 +291,93 @@ class _UserProductPageState extends State<UserProductPage> {
           ),
         );
       },
-      borderRadius: BorderRadius.circular(AppSizes.radiusM),
+
       child: Card(
-        elevation: 2,
-        margin: EdgeInsets.zero,
-        clipBehavior: Clip.antiAlias,
+        elevation: 3,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
+
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
+          crossAxisAlignment: CrossAxisAlignment.start,
+
           children: [
-            // Product Image
-            AspectRatio(
-              aspectRatio: 1.0,
-              child: Stack(
-                fit: StackFit.expand,
+
+            /// IMAGE
+            Expanded(
+              child: ClipRRect(
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(16),
+                ),
+                child: product.imagePath != null
+                    ? Image.file(
+                        File(product.imagePath!),
+                        fit: BoxFit.cover,
+                        width: double.infinity,
+                      )
+                    : Container(
+                        color: Colors.grey.shade200,
+                        child: const Center(
+                          child: Icon(Icons.fastfood),
+                        ),
+                      ),
+              ),
+            ),
+
+            /// INFO
+            Padding(
+              padding: const EdgeInsets.all(10),
+
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+
                 children: [
-                  ClipRRect(
-                    child: product.imagePath != null
-                        ? Image.file(
-                            File(product.imagePath!),
-                            fit: BoxFit.cover,
-                            errorBuilder: (context, error, stackTrace) {
-                              return Container(
-                                color: AppColors.background,
-                                child: const Center(
-                                  child: Icon(
-                                    Icons.image_not_supported,
-                                    size: 40,
-                                    color: AppColors.textSecondary,
-                                  ),
-                                ),
-                              );
-                            },
-                          )
-                        : Container(
-                            color: AppColors.background,
-                            child: const Center(
-                              child: Icon(
-                                Icons.image_not_supported,
-                                size: 40,
-                                color: AppColors.textSecondary,
-                              ),
-                            ),
-                          ),
+
+                  Text(
+                    product.name,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
-                  if (product.hasDiscount)
-                    Positioned(
-                      top: 4,
-                      right: 4,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 4,
-                          vertical: 2,
-                        ),
-                        decoration: BoxDecoration(
-                          color: AppColors.success,
-                          borderRadius: BorderRadius.circular(AppSizes.radiusS),
-                        ),
+
+                  const SizedBox(height: 4),
+
+                  Text(
+                    CurrencyFormatter.format(product.finalPrice),
+                    style: const TextStyle(
+                      color: Color.fromARGB(255, 139, 236, 152),
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+
+                  const SizedBox(height: 6),
+
+                  Row(
+                    children: [
+
+                      Expanded(
                         child: Text(
-                          '${product.discount}%',
+                          "Stok ${product.stock}",
                           style: const TextStyle(
-                            fontSize: 9,
-                            color: AppColors.textWhite,
-                            fontWeight: FontWeight.bold,
+                            fontSize: 12,
+                            color: Colors.grey,
                           ),
                         ),
                       ),
-                    ),
+
+                      SizedBox(
+                        height: 28,
+                        child: CustomButton(
+                          text: "+",
+                          onPressed: () =>
+                              _addToCart(context, product),
+                        ),
+                      ),
+                    ],
+                  ),
                 ],
-              ),
-            ),
-            // Product Info
-            Expanded(
-              child: Padding(
-                padding: EdgeInsets.all(
-                  isMobile ? 6 : 8,
-                ),
-                child: LayoutBuilder(
-                  builder: (context, constraints) {
-                    return Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // Product Name - Full size, not reduced
-                        SizedBox(
-                          height: isMobile ? 30 : 34,
-                          child: Text(
-                            product.name,
-                            style: TextStyle(
-                              fontSize: Responsive.getResponsiveFontSize(
-                                context,
-                                mobile: AppSizes.fontSizeM,
-                                tablet: AppSizes.fontSizeL,
-                                desktop: AppSizes.fontSizeXL,
-                              ),
-                              fontWeight: FontWeight.bold,
-                              color: AppColors.textPrimary,
-                              height: 1.15,
-                            ),
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                        const SizedBox(height: 2),
-                        // Price - Full size, not reduced
-                        Row(
-                          children: [
-                            if (product.hasDiscount) ...[
-                              Flexible(
-                                child: Text(
-                                  CurrencyFormatter.format(product.price),
-                                  style: TextStyle(
-                                    fontSize: Responsive.getResponsiveFontSize(
-                                      context,
-                                      mobile: AppSizes.fontSizeXS,
-                                      tablet: AppSizes.fontSizeS,
-                                    ),
-                                    color: AppColors.textSecondary,
-                                    decoration: TextDecoration.lineThrough,
-                                  ),
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ),
-                              const SizedBox(width: 3),
-                            ],
-                            Flexible(
-                              child: Text(
-                                CurrencyFormatter.format(product.finalPrice),
-                                style: TextStyle(
-                                  fontSize: Responsive.getResponsiveFontSize(
-                                    context,
-                                    mobile: AppSizes.fontSizeM,
-                                    tablet: AppSizes.fontSizeL,
-                                  ),
-                                  fontWeight: FontWeight.bold,
-                                  color: AppColors.primary,
-                                ),
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                          ],
-                        ),
-                        const Spacer(),
-                        // Stock and Button
-                        SizedBox(
-                          height: 22,
-                          child: Row(
-                            children: [
-                              Expanded(
-                                flex: 2,
-                                child: Text(
-                                  'Stok: ${product.stock}',
-                                  style: TextStyle(
-                                    fontSize: Responsive.getResponsiveFontSize(
-                                      context,
-                                      mobile: 9,
-                                      tablet: AppSizes.fontSizeS,
-                                    ),
-                                    color: AppColors.textSecondary,
-                                  ),
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ),
-                              const SizedBox(width: 3),
-                              Expanded(
-                                flex: 3,
-                                child: CustomButton(
-                                  text: 'Tambah',
-                                  onPressed: () => _addToCart(context, product),
-                                  height: 22,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    );
-                  },
-                ),
               ),
             ),
           ],
@@ -492,4 +386,3 @@ class _UserProductPageState extends State<UserProductPage> {
     );
   }
 }
-

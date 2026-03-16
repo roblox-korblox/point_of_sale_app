@@ -1,0 +1,1 @@
+ D:\\pos\\point_of_sale_app\\.dart_tool\\flutter_build\\2901f777aeb3551ddd5bcb119cac27a0\\native_assets.json: 

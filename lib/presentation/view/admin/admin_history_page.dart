@@ -21,6 +21,7 @@ class AdminHistoryPage extends StatefulWidget {
 }
 
 class _AdminHistoryPageState extends State<AdminHistoryPage> {
+
   @override
   void initState() {
     super.initState();
@@ -50,10 +51,12 @@ class _AdminHistoryPageState extends State<AdminHistoryPage> {
         builder: (context, state) {
           if (state is HistoryLoading) {
             return const LoadingWidget();
-          } else if (state is HistoryLoaded) {
+          }
+
+          if (state is HistoryLoaded) {
             if (state.orders.isEmpty) {
               return const EmptyWidget(
-                message: 'Tidak ada riwayat pesanan',
+                message: 'No order history available',
                 icon: Icons.history,
               );
             }
@@ -71,7 +74,9 @@ class _AdminHistoryPageState extends State<AdminHistoryPage> {
                 },
               ),
             );
-          } else if (state is HistoryError) {
+          }
+
+          if (state is HistoryError) {
             return Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -83,14 +88,14 @@ class _AdminHistoryPageState extends State<AdminHistoryPage> {
                   const SizedBox(height: AppSizes.paddingM),
                   ElevatedButton(
                     onPressed: _loadHistory,
-                    child: const Text('Coba Lagi'),
+                    child: const Text('Try Again'),
                   ),
                 ],
               ),
             );
-          } else {
-            return const EmptyWidget(message: AppStrings.noData);
           }
+
+          return const EmptyWidget(message: AppStrings.noData);
         },
       ),
     );
@@ -113,6 +118,7 @@ class _AdminHistoryPageState extends State<AdminHistoryPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -134,7 +140,7 @@ class _AdminHistoryPageState extends State<AdminHistoryPage> {
                       color: order.status == 'completed'
                           ? AppColors.success.withValues(alpha: 0.2)
                           : AppColors.error.withValues(alpha: 0.2),
-                      borderRadius: BorderRadius.circular(4),
+                      borderRadius: BorderRadius.circular(6),
                     ),
                     child: Text(
                       order.status.toUpperCase(),
@@ -149,7 +155,9 @@ class _AdminHistoryPageState extends State<AdminHistoryPage> {
                   ),
                 ],
               ),
+
               const SizedBox(height: AppSizes.paddingS),
+
               Text(
                 DateFormatter.formatDateTime(order.createdAt),
                 style: TextStyle(
@@ -157,6 +165,7 @@ class _AdminHistoryPageState extends State<AdminHistoryPage> {
                   fontSize: AppSizes.fontSizeS,
                 ),
               ),
+
               if (order.userId != null) ...[
                 const SizedBox(height: AppSizes.paddingS),
                 Text(
@@ -167,7 +176,9 @@ class _AdminHistoryPageState extends State<AdminHistoryPage> {
                   ),
                 ),
               ],
+
               const SizedBox(height: AppSizes.paddingS),
+
               Text(
                 '${order.items.length} item${order.items.length > 1 ? 's' : ''}',
                 style: TextStyle(
@@ -175,7 +186,9 @@ class _AdminHistoryPageState extends State<AdminHistoryPage> {
                   fontSize: AppSizes.fontSizeS,
                 ),
               ),
+
               const SizedBox(height: AppSizes.paddingS),
+
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -196,6 +209,7 @@ class _AdminHistoryPageState extends State<AdminHistoryPage> {
                   ),
                 ],
               ),
+
             ],
           ),
         ),
@@ -203,5 +217,3 @@ class _AdminHistoryPageState extends State<AdminHistoryPage> {
     );
   }
 }
-
-

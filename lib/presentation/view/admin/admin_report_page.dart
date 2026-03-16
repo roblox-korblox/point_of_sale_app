@@ -297,7 +297,7 @@ class _AdminReportPageState extends State<AdminReportPage> {
         return Scaffold(
           appBar: AppBar(
             title: const Text(AppStrings.report),
-            backgroundColor: AppColors.primary,
+            backgroundColor: const Color.fromARGB(255, 86, 155, 92),
             foregroundColor: AppColors.textWhite,
           ),
           body: SingleChildScrollView(
@@ -390,7 +390,7 @@ class _AdminReportPageState extends State<AdminReportPage> {
                               context,
                               AppStrings.profit,
                               CurrencyFormatter.format(state.profit),
-                              AppColors.chartProfit,
+                              const Color.fromARGB(255, 102, 184, 127),
                             ),
                             const SizedBox(height: AppSizes.paddingM),
                             _buildStatCard(
@@ -427,7 +427,7 @@ class _AdminReportPageState extends State<AdminReportPage> {
                               context,
                               AppStrings.profit,
                               CurrencyFormatter.format(state.profit),
-                              AppColors.chartProfit,
+                              const Color.fromARGB(255, 101, 179, 94),
                             ),
                             _buildStatCard(
                               context,

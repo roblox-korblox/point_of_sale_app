@@ -31,18 +31,17 @@ class _UserReceiptPageState extends State<UserReceiptPage> {
   bool _isPrinting = false;
   final PrinterService _printerService = PrinterService();
 
+  /// ---------------- PRINT PDF ----------------
   Future<void> _printReceipt() async {
     if (!mounted) return;
 
-    setState(() {
-      _isPrinting = true;
-    });
+    setState(() => _isPrinting = true);
 
     final messenger = ScaffoldMessenger.of(context);
 
     try {
-      // Generate PDF
       final pdf = pw.Document();
+
       pdf.addPage(
         pw.Page(
           pageFormat: PdfPageFormat(58 * PdfPageFormat.mm, double.infinity),
@@ -54,172 +53,39 @@ class _UserReceiptPageState extends State<UserReceiptPage> {
                 pw.Text(
                   AppStrings.appName.toUpperCase(),
                   style: pw.TextStyle(
-                    fontSize: 18,
+                    fontSize: 16,
                     fontWeight: pw.FontWeight.bold,
                   ),
                 ),
-                pw.SizedBox(height: 4),
-                pw.Text(
-                  'STRUK PEMBAYARAN',
-                  style: pw.TextStyle(
-                    fontSize: 13,
-                    fontWeight: pw.FontWeight.bold,
-                  ),
-                ),
-                pw.SizedBox(height: 10),
-                pw.Container(
-                  padding: const pw.EdgeInsets.symmetric(vertical: 2),
-                  child: pw.Row(
-                    mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-                    children: [pw.Text('ID Pesanan'), pw.Text(widget.order.id)],
-                  ),
-                ),
-                pw.Row(
-                  mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-                  children: [
-                    pw.Text('Tanggal'),
-                    pw.Text(
-                      DateFormatter.formatDateTimeForReceipt(
-                        widget.order.createdAt,
-                      ),
-                    ),
-                  ],
-                ),
-                pw.Row(
-                  mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-                  children: [
-                    pw.Text('Metode'),
-                    pw.Text(widget.order.paymentMethod.toUpperCase()),
-                  ],
-                ),
-                pw.SizedBox(height: 8),
-                pw.Container(
-                  width: double.infinity,
-                  color: PdfColors.grey300,
-                  height: 1,
-                ),
-                pw.SizedBox(height: 6),
 
-                // Items
+                pw.SizedBox(height: 8),
+
                 ...widget.order.items.map(
-                  (item) => pw.Column(
-                    crossAxisAlignment: pw.CrossAxisAlignment.start,
-                    children: [
-                      pw.Row(
-                        mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-                        children: [
-                          pw.Expanded(
-                            child: pw.Text(
-                              item.product.name,
-                              style: pw.TextStyle(fontSize: 11),
-                            ),
-                          ),
-                          pw.Text(
-                            'x${item.quantity}',
-                            style: const pw.TextStyle(fontSize: 10),
-                          ),
-                        ],
-                      ),
-                      pw.Row(
-                        mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-                        children: [
-                          pw.Text(
-                            CurrencyFormatter.format(item.finalPrice),
-                            style: const pw.TextStyle(fontSize: 10),
-                          ),
-                          pw.Text(
-                            CurrencyFormatter.format(item.total),
-                            style: const pw.TextStyle(fontSize: 10),
-                          ),
-                        ],
-                      ),
-                      pw.SizedBox(height: 4),
-                    ],
-                  ),
-                ),
-                pw.SizedBox(height: 8),
-                pw.Container(
-                  width: double.infinity,
-                  color: PdfColors.grey300,
-                  height: 1,
-                ),
-                pw.SizedBox(height: 6),
-
-                // Total Section
-                pw.Row(
-                  mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-                  children: [
-                    pw.Text(
-                      'Subtotal',
-                      style: const pw.TextStyle(fontSize: 11),
-                    ),
-                    pw.Text(
-                      CurrencyFormatter.format(widget.order.subtotal),
-                      style: const pw.TextStyle(fontSize: 11),
-                    ),
-                  ],
-                ),
-                if (widget.order.totalDiscount > 0) ...[
-                  pw.SizedBox(height: 3),
-                  pw.Row(
+                  (item) => pw.Row(
                     mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                     children: [
-                      pw.Text(
-                        'Diskon',
-                        style: const pw.TextStyle(fontSize: 11),
-                      ),
-                      pw.Text(
-                        CurrencyFormatter.format(widget.order.totalDiscount),
-                        style: const pw.TextStyle(fontSize: 11),
-                      ),
+                      pw.Text("${item.product.name} x${item.quantity}"),
+                      pw.Text(CurrencyFormatter.format(item.total)),
                     ],
                   ),
-                ],
-                pw.SizedBox(height: 6),
-                pw.Container(
-                  width: double.infinity,
-                  color: PdfColors.grey300,
-                  height: 1,
                 ),
-                pw.SizedBox(height: 6),
+
+                pw.SizedBox(height: 8),
+
+                pw.Divider(),
+
                 pw.Row(
                   mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                   children: [
                     pw.Text(
-                      'TOTAL',
-                      style: pw.TextStyle(
-                        fontSize: 13,
-                        fontWeight: pw.FontWeight.bold,
-                      ),
+                      "TOTAL",
+                      style: pw.TextStyle(fontWeight: pw.FontWeight.bold),
                     ),
                     pw.Text(
                       CurrencyFormatter.format(widget.order.total),
-                      style: pw.TextStyle(
-                        fontSize: 13,
-                        fontWeight: pw.FontWeight.bold,
-                      ),
+                      style: pw.TextStyle(fontWeight: pw.FontWeight.bold),
                     ),
                   ],
-                ),
-                pw.SizedBox(height: 12),
-
-                // Footer
-                pw.Text(
-                  'Terima Kasih!',
-                  style: pw.TextStyle(
-                    fontWeight: pw.FontWeight.bold,
-                    fontSize: 12,
-                  ),
-                ),
-                pw.SizedBox(height: 3),
-                pw.Text(
-                  'Selamat Berbelanja Kembali',
-                  style: const pw.TextStyle(fontSize: 10),
-                ),
-                pw.SizedBox(height: 4),
-                pw.Text(
-                  '--- ${AppStrings.appName} ---',
-                  style: const pw.TextStyle(fontSize: 8, color: PdfColors.grey),
                 ),
               ],
             );
@@ -227,57 +93,46 @@ class _UserReceiptPageState extends State<UserReceiptPage> {
         ),
       );
 
-      // Print PDF
       await Printing.layoutPdf(
         onLayout: (PdfPageFormat format) async => pdf.save(),
       );
 
-      if (mounted) {
-        messenger.showSnackBar(
-          const SnackBar(
-            content: Text('Struk berhasil di-print (PDF)'),
-            backgroundColor: AppColors.success,
-          ),
-        );
-      }
+      messenger.showSnackBar(
+        const SnackBar(
+          content: Text("Receipt printed (PDF)"),
+          backgroundColor: AppColors.success,
+        ),
+      );
     } catch (e) {
-      if (mounted) {
-        messenger.showSnackBar(
-          SnackBar(
-            content: Text('Error printing: $e'),
-            backgroundColor: AppColors.error,
-          ),
-        );
-      }
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isPrinting = false;
-        });
-      }
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text("Error printing: $e"),
+          backgroundColor: AppColors.error,
+        ),
+      );
+    }
+
+    if (mounted) {
+      setState(() => _isPrinting = false);
     }
   }
 
+  /// ---------------- BLUETOOTH PRINT ----------------
   Future<void> _printToBluetoothPrinter() async {
     if (!mounted) return;
 
     final messenger = ScaffoldMessenger.of(context);
 
     if (!_printerService.isConnected) {
-      // Show dialog to select printer
       await Navigator.push(
         context,
         MaterialPageRoute(builder: (context) => const PrinterScanPage()),
       );
 
-      if (!mounted) return;
-
       if (!_printerService.isConnected) {
         messenger.showSnackBar(
           const SnackBar(
-            content: Text(
-              'Printer tidak terhubung. Silakan pilih printer terlebih dahulu.',
-            ),
+            content: Text("Please connect a Bluetooth printer first"),
             backgroundColor: AppColors.error,
           ),
         );
@@ -285,324 +140,259 @@ class _UserReceiptPageState extends State<UserReceiptPage> {
       }
     }
 
-    setState(() {
-      _isPrinting = true;
-    });
+    setState(() => _isPrinting = true);
 
     try {
       await _printerService.printReceipt(widget.order);
 
-      if (mounted) {
-        messenger.showSnackBar(
-          const SnackBar(
-            content: Text('Struk berhasil di-print ke printer Bluetooth'),
-            backgroundColor: AppColors.success,
-          ),
-        );
-      }
+      messenger.showSnackBar(
+        const SnackBar(
+          content: Text("Receipt printed successfully"),
+          backgroundColor: AppColors.success,
+        ),
+      );
     } catch (e) {
-      if (mounted) {
-        messenger.showSnackBar(
-          SnackBar(
-            content: Text('Error printing: $e'),
-            backgroundColor: AppColors.error,
-          ),
-        );
-      }
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isPrinting = false;
-        });
-      }
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text("Error printing: $e"),
+          backgroundColor: AppColors.error,
+        ),
+      );
+    }
+
+    if (mounted) {
+      setState(() => _isPrinting = false);
     }
   }
 
+  /// ---------------- UI ----------------
   @override
   Widget build(BuildContext context) {
     return SafeArea(
       child: Scaffold(
+        backgroundColor: Colors.grey.shade100,
+
         appBar: AppBar(
           title: const Text(AppStrings.receipt),
-          backgroundColor: AppColors.primary,
-          foregroundColor: AppColors.textWhite,
+          backgroundColor: const Color.fromARGB(255, 93, 119, 86),
+          foregroundColor: Colors.white,
+          elevation: 0,
         ),
+
         body: SingleChildScrollView(
-          padding: const EdgeInsets.all(AppSizes.paddingM),
+          padding: const EdgeInsets.all(16),
+
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Receipt Header
-              Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(AppSizes.paddingL),
-                  child: Column(
-                    children: [
-                      const Text(
-                        AppStrings.appName,
-                        style: TextStyle(
-                          fontSize: AppSizes.fontSizeXXL,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(height: AppSizes.paddingS),
-                      const Text(
-                        'Struk Pembayaran',
-                        style: TextStyle(
-                          fontSize: AppSizes.fontSizeL,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const Divider(),
-                      const SizedBox(height: AppSizes.paddingS),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          const Text('ID Pesanan:'),
-                          Text(widget.order.id),
-                        ],
-                      ),
-                      const SizedBox(height: AppSizes.paddingS),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          const Text('Tanggal:'),
-                          Text(
-                            DateFormatter.formatDateTimeForReceipt(
-                              widget.order.createdAt,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: AppSizes.paddingS),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          const Text('Metode:'),
-                          Text(widget.order.paymentMethod.toUpperCase()),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              const SizedBox(height: AppSizes.paddingL),
-              // Items
-              const Text(
-                'Items:',
-                style: TextStyle(
-                  fontSize: AppSizes.fontSizeXL,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: AppSizes.paddingM),
-              ...widget.order.items.map(
-                (item) => Card(
-                  margin: const EdgeInsets.only(bottom: AppSizes.paddingS),
-                  child: ListTile(
-                    title: Text(item.product.name),
-                    subtitle: Text('${AppStrings.quantity}: ${item.quantity}'),
-                    trailing: Text(
-                      CurrencyFormatter.format(item.total),
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.primary,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(height: AppSizes.paddingL),
-              // Total
-              Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(AppSizes.paddingM),
-                  child: Column(
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          const Text('Subtotal:'),
-                          Text(CurrencyFormatter.format(widget.order.subtotal)),
-                        ],
-                      ),
-                      if (widget.order.totalDiscount > 0) ...[
-                        const SizedBox(height: AppSizes.paddingS),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            const Text('Diskon:'),
-                            Text(
-                              CurrencyFormatter.format(
-                                widget.order.totalDiscount,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                      const Divider(),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          const Text(
-                            AppStrings.total,
-                            style: TextStyle(
-                              fontSize: AppSizes.fontSizeXL,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          Text(
-                            CurrencyFormatter.format(widget.order.total),
-                            style: const TextStyle(
-                              fontSize: AppSizes.fontSizeXL,
-                              fontWeight: FontWeight.bold,
-                              color: AppColors.primary,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              const SizedBox(height: AppSizes.paddingL),
-              // Print Buttons
+
+              /// HEADER
               Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Expanded(
-                    child: CustomButton(
-                      text: 'PDF',
-                      onPressed: _isPrinting ? null : _printReceipt,
-                      isLoading: _isPrinting,
-                      icon: Icons.picture_as_pdf,
-                      isOutlined: true,
+                  Text(
+                    AppStrings.appName,
+                    style: const TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
                     ),
                   ),
-                  const SizedBox(width: AppSizes.paddingS),
-                  Expanded(
-                    child: CustomButton(
-                      text: 'Printer',
-                      onPressed: _isPrinting ? null : _printToBluetoothPrinter,
-                      isLoading: _isPrinting,
-                      icon: Icons.print,
+
+                  Text(
+                    DateFormatter.formatDateTimeForReceipt(
+                        widget.order.createdAt),
+                    style: const TextStyle(
+                      color: Colors.grey,
+                      fontSize: 12,
                     ),
                   ),
                 ],
               ),
-              const SizedBox(height: AppSizes.paddingS),
-              // Bluetooth Printer Status and Settings
-              if (_printerService.isConnected)
-                Card(
-                  color: AppColors.success.withValues(alpha: 0.1),
-                  child: Padding(
-                    padding: const EdgeInsets.all(AppSizes.paddingS),
-                    child: Row(
-                      children: [
-                        Icon(
-                          Icons.bluetooth_connected,
-                          color: AppColors.success,
-                          size: 20,
-                        ),
-                        const SizedBox(width: AppSizes.paddingS),
-                        Expanded(
-                          child: Text(
-                            'Terhubung: ${_printerService.connectedDevice?.name ?? "Unknown"}',
-                            style: TextStyle(
-                              fontSize: AppSizes.fontSizeS,
-                              color: AppColors.success,
+
+              const SizedBox(height: 16),
+
+              /// RECEIPT CARD
+              Container(
+                padding: const EdgeInsets.all(16),
+
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+
+                  boxShadow: [
+                    BoxShadow(
+                      blurRadius: 12,
+                      color: Colors.black.withOpacity(.05),
+                    )
+                  ],
+                ),
+
+                child: Column(
+                  children: [
+
+                    /// ITEMS
+                    ...widget.order.items.map(
+                      (item) => Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 6),
+
+                        child: Row(
+                          children: [
+
+                            Expanded(
+                              child: Text(
+                                item.product.name,
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 14,
+                                ),
+                              ),
                             ),
+
+                            Text(
+                              "x${item.quantity}",
+                              style: const TextStyle(fontSize: 13),
+                            ),
+
+                            const SizedBox(width: 8),
+
+                            Text(
+                              CurrencyFormatter.format(item.total),
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                color: Color.fromARGB(255, 92, 151, 115),
+                                fontSize: 14,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+
+                    const Divider(height: 20),
+
+                    /// TOTAL
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+
+                        const Text(
+                          "TOTAL",
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
                           ),
                         ),
-                        TextButton(
-                          onPressed: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => const PrinterScanPage(),
-                              ),
-                            ).then((_) {
-                              if (mounted) {
-                                setState(() {});
-                              }
-                            });
-                          },
-                          child: const Text('Ganti'),
+
+                        Text(
+                          CurrencyFormatter.format(widget.order.total),
+                          style: const TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: Color.fromARGB(255, 116, 182, 114),
+                          ),
                         ),
                       ],
+                    ),
+                  ],
+                ),
+              ),
+
+              const SizedBox(height: 16),
+
+              /// BUTTONS
+              Row(
+                children: [
+
+                  Expanded(
+                    child: CustomButton(
+                      text: "Export PDF",
+                      icon: Icons.picture_as_pdf,
+                      isOutlined: true,
+                      isLoading: _isPrinting,
+                      onPressed: _isPrinting ? null : _printReceipt,
                     ),
                   ),
-                )
-              else
-                Card(
-                  color: AppColors.textSecondary.withValues(alpha: 0.1),
-                  child: Padding(
-                    padding: const EdgeInsets.all(AppSizes.paddingS),
-                    child: Row(
-                      children: [
-                        Icon(
-                          Icons.bluetooth_disabled,
-                          color: AppColors.textSecondary,
-                          size: 20,
-                        ),
-                        const SizedBox(width: AppSizes.paddingS),
-                        Expanded(
-                          child: Text(
-                            'Printer Bluetooth belum terhubung',
-                            style: TextStyle(
-                              fontSize: AppSizes.fontSizeS,
-                              color: AppColors.textSecondary,
-                            ),
-                          ),
-                        ),
-                        TextButton(
-                          onPressed: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => const PrinterScanPage(),
-                              ),
-                            ).then((_) {
-                              if (mounted) {
-                                setState(() {});
-                              }
-                            });
-                          },
-                          child: const Text('Pilih Printer'),
-                        ),
-                      ],
+
+                  const SizedBox(width: 10),
+
+                  Expanded(
+                    child: CustomButton(
+                      text: "Print",
+                      icon: Icons.print,
+                      isLoading: _isPrinting,
+                      onPressed:
+                          _isPrinting ? null : _printToBluetoothPrinter,
                     ),
+                  ),
+                ],
+              ),
+
+              const SizedBox(height: 14),
+
+              /// BLUETOOTH STATUS
+              Card(
+                child: ListTile(
+                  dense: true,
+
+                  leading: Icon(
+                    _printerService.isConnected
+                        ? Icons.bluetooth_connected
+                        : Icons.bluetooth_disabled,
+
+                    color: _printerService.isConnected
+                        ? Colors.green
+                        : Colors.grey,
+                  ),
+
+                  title: Text(
+                    _printerService.isConnected
+                        ? "Connected: ${_printerService.connectedDevice?.name}"
+                        : "Bluetooth printer not connected",
+                    style: const TextStyle(fontSize: 13),
+                  ),
+
+                  trailing: TextButton(
+                    child: const Text("Select"),
+
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const PrinterScanPage(),
+                        ),
+                      ).then((_) {
+                        if (mounted) setState(() {});
+                      });
+                    },
                   ),
                 ),
-              const SizedBox(height: AppSizes.paddingM),
-              // Done Button
+              ),
+
+              const SizedBox(height: 14),
+
+              /// DONE BUTTON
               CustomButton(
-                text: 'Selesai',
+                text: "Selesai",
+                icon: Icons.check_circle,
+
                 onPressed: () async {
-                  if (!mounted) return;
-                  
-                  // Get NavigatorState before async operation
                   final navigator = Navigator.of(context);
-                  
-                  // Refresh history before navigating back
+
                   final authState = context.read<AuthBloc>().state;
+
                   if (authState is AuthAuthenticated) {
                     context.read<HistoryBloc>().add(
-                      LoadHistoryEvent(userId: authState.user.id),
-                    );
+                          LoadHistoryEvent(userId: authState.user.id),
+                        );
                   }
-                  
-                  // Save flag to indicate order was completed
-                  // This will be used to switch to history tab in UserHistoryPage
+
                   final prefs = await SharedPreferences.getInstance();
                   await prefs.setBool('show_history_after_order', true);
-                  
-                  // Navigate back to the first route (UserHistoryPage)
-                  // Check mounted again after async operation
+
                   if (mounted) {
                     navigator.popUntil((route) => route.isFirst);
                   }
                 },
-                icon: Icons.check_circle,
               ),
             ],
           ),
